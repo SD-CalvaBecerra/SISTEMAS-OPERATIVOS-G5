@@ -1,8 +1,3 @@
-# Simulador de Paginación y Reemplazo de Páginas
-
-**Curso:** Sistemas Operativos  
-**Grupo:** 5  
----
 
 # 1. Introducción
 

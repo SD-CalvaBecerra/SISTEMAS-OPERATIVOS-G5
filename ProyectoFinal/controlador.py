@@ -58,3 +58,27 @@ def traducir(resultado, direccion_logica, tamano_pagina):
     pagina = direccion_logica // tamano_pagina
     fisica = TraductorDirecciones(tabla, tamano_pagina).traducir(direccion_logica)
     return pagina, fisica
+
+
+def generar_tabla_simulaciones(max_marcos=7, cantidad=20, max_pagina=9):
+    tipos_cadena = ["Prueba del grupo", "Belady", "Aleatoria", "Con localidad"]
+    filas = []
+    for tipo in tipos_cadena:
+        if tipo in ("Aleatoria", "Con localidad"):
+            cadena = generar_cadena(tipo, cantidad=cantidad, max_pagina=max_pagina)
+        else:
+            cadena = generar_cadena(tipo)
+
+        for num_marcos in range(1, max_marcos + 1):
+            for alg in ALGORITMOS:
+                res = ejecutar(alg, cadena, num_marcos)
+                filas.append({
+                    "algoritmo": alg,
+                    "num_marcos": num_marcos,
+                    "tipo_cadena": tipo,
+                    "largo_cadena": len(cadena),
+                    "fallos": res["fallos"],
+                    "reemplazos": res["reemplazos"],
+                    "tasa_fallos": round(res["tasa_fallos"], 4),
+                })
+    return filas

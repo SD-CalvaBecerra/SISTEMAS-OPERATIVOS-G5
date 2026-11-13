@@ -1,0 +1,49 @@
+﻿algoritmo,num_marcos,tipo_cadena,largo_cadena,fallos,reemplazos,tasa_fallos
+FIFO,1,Prueba del grupo,20,20,19,1.0
+LRU,1,Prueba del grupo,20,20,19,1.0
+Óptimo,1,Prueba del grupo,20,20,19,1.0
+FIFO,2,Prueba del grupo,20,15,13,0.75
+LRU,2,Prueba del grupo,20,17,15,0.85
+Óptimo,2,Prueba del grupo,20,13,11,0.65
+FIFO,3,Prueba del grupo,20,15,12,0.75
+LRU,3,Prueba del grupo,20,12,9,0.6
+Óptimo,3,Prueba del grupo,20,9,6,0.45
+FIFO,4,Prueba del grupo,20,10,6,0.5
+LRU,4,Prueba del grupo,20,8,4,0.4
+Óptimo,4,Prueba del grupo,20,8,4,0.4
+FIFO,1,Belady,12,12,11,1.0
+LRU,1,Belady,12,12,11,1.0
+Óptimo,1,Belady,12,12,11,1.0
+FIFO,2,Belady,12,12,10,1.0
+LRU,2,Belady,12,12,10,1.0
+Óptimo,2,Belady,12,9,7,0.75
+FIFO,3,Belady,12,9,6,0.75
+LRU,3,Belady,12,10,7,0.8333
+Óptimo,3,Belady,12,7,4,0.5833
+FIFO,4,Belady,12,10,6,0.8333
+LRU,4,Belady,12,8,4,0.6667
+Óptimo,4,Belady,12,6,2,0.5
+FIFO,1,Aleatoria,20,18,17,0.9
+LRU,1,Aleatoria,20,18,17,0.9
+Óptimo,1,Aleatoria,20,18,17,0.9
+FIFO,2,Aleatoria,20,17,15,0.85
+LRU,2,Aleatoria,20,17,15,0.85
+Óptimo,2,Aleatoria,20,15,13,0.75
+FIFO,3,Aleatoria,20,13,10,0.65
+LRU,3,Aleatoria,20,13,10,0.65
+Óptimo,3,Aleatoria,20,12,9,0.6
+FIFO,4,Aleatoria,20,11,7,0.55
+LRU,4,Aleatoria,20,12,8,0.6
+Óptimo,4,Aleatoria,20,10,6,0.5
+FIFO,1,Con localidad,20,17,16,0.85
+LRU,1,Con localidad,20,17,16,0.85
+Óptimo,1,Con localidad,20,17,16,0.85
+FIFO,2,Con localidad,20,11,9,0.55
+LRU,2,Con localidad,20,10,8,0.5
+Óptimo,2,Con localidad,20,9,7,0.45
+FIFO,3,Con localidad,20,6,3,0.3
+LRU,3,Con localidad,20,5,2,0.25
+Óptimo,3,Con localidad,20,5,2,0.25
+FIFO,4,Con localidad,20,4,0,0.2
+LRU,4,Con localidad,20,4,0,0.2
+Óptimo,4,Con localidad,20,4,0,0.2

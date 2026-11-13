@@ -91,5 +91,36 @@ class TestAlgoritmos(unittest.TestCase):
         r = controlador.ejecutar("FIFO", [1, 2, 3], 3)
         self.assertEqual(controlador.traducir(r, 1030, 1024), (1, 6))
 
+    def test_tabla_simulaciones(self):
+        filas = controlador.generar_tabla_simulaciones(max_marcos=4)
+        self.assertTrue(len(filas) > 0)
+        for f in filas:
+            self.assertGreaterEqual(f["tasa_fallos"], 0.0)
+            self.assertLessEqual(f["tasa_fallos"], 1.0)
+
+    def test_direcciones_y_swapping(self):
+        from direcciones.memoria_fisica import MemoriaFisica
+        from direcciones.swapping import Swapping
+        from direcciones.tabla_paginas import TablaPaginas
+        from direcciones.traductor import TraductorDirecciones
+
+        mem = MemoriaFisica(2)
+        marco = mem.buscar_libre()
+        self.assertEqual(marco, 0)
+        mem.cargar_pagina(5, marco)
+        self.assertEqual(mem.buscar_libre(), 1)
+
+        swap = Swapping()
+        swap.guardar_pagina(5, "datos_p5")
+        self.assertEqual(swap.recuperar_pagina(5), "datos_p5")
+        swap.eliminar_pagina(5)
+        self.assertIsNone(swap.recuperar_pagina(5))
+
+        tabla = TablaPaginas()
+        tabla.cargar_pagina(5, 0)
+        trad = TraductorDirecciones(tabla, 1024)
+        self.assertEqual(trad.traducir(5 * 1024 + 120), 120)
+        self.assertIsNone(trad.traducir(2 * 1024 + 10))
+
 if __name__ == "__main__":
     unittest.main()

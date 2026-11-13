@@ -1,39 +1,19 @@
+import os
+import csv
 import tkinter as tk
 from tkinter import ttk, messagebox
 
 import controlador as ctl
+from visualizacion.panel_marcos import PanelMarcos
 
-try:  
-    from visualizacion.panel_marcos import PanelMarcos
-except ImportError:
-    try:
-        from visualizacion import PanelMarcos
-    except ImportError:
-        PanelMarcos = None
-
-class PanelBasico:
-    def __init__(self, contenedor):
-        self.texto = tk.Text(contenedor, height=14, font=("Courier", 10))
-        self.texto.pack(fill="both", expand=True)
-
-    def mostrar(self, resultado):
-        n = resultado["num_marcos"]
-        lineas = ["Pág  " + "  ".join(f"M{i}" for i in range(n)) + "  Estado"]
-        for p in resultado["pasos"]:
-            marcos = "  ".join(f"{'-' if m is None else m:>2}" for m in p["marcos"])
-            estado = "FALLO" if p["fallo"] else "ok"
-            if p["reemplazada"] is not None:
-                estado += f" (sale {p['reemplazada']})"
-            lineas.append(f"{p['pagina']:>3}  {marcos}  {estado}")
-        self.texto.delete("1.0", "end")
-        self.texto.insert("1.0", "\n".join(lineas))
 
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Simulador de paginación y reemplazo de páginas")
-        self.geometry("900x700")
+        self.geometry("900x750")
         self.resultado = None
+        self.cadena_actual = None
         self._construir()
 
     def _construir(self):
@@ -52,6 +32,7 @@ class App(tk.Tk):
 
         ttk.Label(f, text="Tipo de cadena:").grid(row=0, column=4, padx=5)
         self.var_tipo = tk.StringVar(value="Prueba del grupo")
+        self.var_tipo.trace_add("write", lambda *_: setattr(self, "cadena_actual", None))
         ttk.Combobox(f, textvariable=self.var_tipo, values=ctl.TIPOS_CADENA,
                      state="readonly", width=16).grid(row=0, column=5)
 
@@ -72,16 +53,23 @@ class App(tk.Tk):
 
         b = ttk.Frame(self)
         b.pack(fill="x", padx=10)
+        ttk.Button(b, text="Generar", command=self.generar).pack(side="left", padx=5)
         ttk.Button(b, text="Ejecutar", command=self.ejecutar).pack(side="left", padx=5)
         ttk.Button(b, text="Comparar los 3", command=self.comparar).pack(side="left", padx=5)
         ttk.Button(b, text="Gráficos", command=self.graficos).pack(side="left", padx=5)
+        ttk.Button(b, text="CSV tabla", command=self.csv_tabla).pack(side="left", padx=5)
+
+        self.lbl_cadena = ttk.Label(self, text="Cadena: (sin generar)")
+        self.lbl_cadena.pack(fill="x", padx=10, pady=2)
 
         self.lbl_res = ttk.Label(self, text="Sin resultados todavía.")
         self.lbl_res.pack(fill="x", padx=10, pady=5)
 
         marco_panel = ttk.LabelFrame(self, text="Evolución de los marcos")
         marco_panel.pack(fill="both", expand=True, padx=10, pady=5)
-        self.panel = (PanelMarcos or PanelBasico)(marco_panel)
+        self.panel = PanelMarcos(marco_panel)
+
+        self._armar_csv_view()
 
         d = ttk.LabelFrame(self, text="Traducción de direcciones (estado final)")
         d.pack(fill="x", padx=10, pady=5)
@@ -95,9 +83,62 @@ class App(tk.Tk):
         self.lbl_dir = ttk.Label(d, text="")
         self.lbl_dir.grid(row=0, column=5, padx=5)
 
+    def _armar_csv_view(self):
+        self.frm_csv = ttk.LabelFrame(self, text="Tabla de simulaciones (CSV)")
+        self.frm_csv.pack(fill="both", expand=True, padx=10, pady=5)
+        columns = ("algoritmo","num_marcos","tipo_cadena","largo_cadena","fallos","reemplazos","tasa_fallos")
+        self.tree = ttk.Treeview(self.frm_csv, columns=columns, show="headings", height=8)
+        for col in columns:
+            self.tree.heading(col, text=col.replace("_"," ").title())
+            self.tree.column(col, width=90)
+        vsb = ttk.Scrollbar(self.frm_csv, orient="vertical", command=self.tree.yview)
+        self.tree.configure(yscrollcommand=vsb.set)
+        self.tree.pack(side="left", fill="both", expand=True)
+        vsb.pack(side="right", fill="y")
+        self.tree.bind("<<TreeviewSelect>>", self._ver_detalle)
+        self._insertar_placeholder()
+
+    def _insertar_placeholder(self):
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+        self.tree.insert("", "end", values=("—", "—", "—", "—", "—", "—", "—"))
+
+    def _cargar_csv_en_tree(self, filas):
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+        for f in filas:
+            tasa_pct = round(f["tasa_fallos"] * 100, 2)
+            vals = [f.get(c,"") for c in ("algoritmo","num_marcos","tipo_cadena","largo_cadena","fallos","reemplazos","tasa_fallos")]
+            vals[-1] = f"{tasa_pct}%"
+            self.tree.insert("", "end", values=vals)
+
+    def _ver_detalle(self, event=None):
+        sel = self.tree.selection()
+        if not sel:
+            return
+        vals = self.tree.item(sel[0])["values"]
+        if not vals or vals[0] == "—":
+            return
+        self.var_alg.set(vals[0])
+        self.var_marcos.set(int(vals[1]))
+        self.var_tipo.set(vals[2])
+        self.ejecutar()
+
     def _leer_cadena(self):
-        return ctl.generar_cadena(self.var_tipo.get(), self.var_manual.get(),
-                                  self.var_cant.get(), self.var_max.get())
+        if self.cadena_actual is not None and self.var_tipo.get() != "Manual":
+            return self.cadena_actual
+        cadena = ctl.generar_cadena(self.var_tipo.get(), self.var_manual.get(),
+                                    self.var_cant.get(), self.var_max.get())
+        self.cadena_actual = cadena
+        self.lbl_cadena.config(text="Cadena: " + ", ".join(str(x) for x in cadena))
+        return cadena
+
+    def generar(self):
+        self.cadena_actual = None
+        try:
+            self._leer_cadena()
+        except (ValueError, tk.TclError) as e:
+            messagebox.showerror("Error", str(e))
 
     def ejecutar(self):
         try:
@@ -108,8 +149,7 @@ class App(tk.Tk):
             return
         r = self.resultado
         self.lbl_res.config(text=(
-            f"{r['algoritmo']} | cadena: {r['cadena']} | fallos: {r['fallos']} | "
-            f"reemplazos: {r['reemplazos']} | tasa: {r['tasa_fallos'] * 100:.1f}%"))
+            f"{r['algoritmo']} | fallos: {r['fallos']} | reemplazos: {r['reemplazos']} | tasa: {r['tasa_fallos'] * 100:.1f}%"))
         self.panel.mostrar(r)
 
     def comparar(self):
@@ -122,68 +162,67 @@ class App(tk.Tk):
                         for n, f, r, t in filas)
         messagebox.showinfo("Comparación", txt)
 
-    
-    
-    
     def graficos(self):
         try:
-            from graficos.graficos import (
-                comparar_algoritmos,
-                grafico_fallos_marcos,
-                grafico_belady_dinamico
-            )
-
-            from algoritmos.fifo import FIFO
-
-            # Obtener datos del simulador
+            from graficos import graficos as g
             cadena = self._leer_cadena()
             num_marcos = self.var_marcos.get()
-
-            # GRÁFICO 1: Comparación de algoritmos
-            resultados = ctl.comparar(cadena, num_marcos)
-            comparar_algoritmos(resultados)
-
-            # GRÁFICO 2: Fallos según número de marcos
-            marcos = list(range(1, num_marcos + 1))
-
-            fifo = []
-            lru = []
-            optimo = []
-
-            for cantidad in marcos:
-                fifo.append(
-                    ctl.ejecutar("FIFO", cadena, cantidad)["fallos"]
-                )
-                lru.append(
-                    ctl.ejecutar("LRU", cadena, cantidad)["fallos"]
-                )
-                optimo.append(
-                    ctl.ejecutar("Óptimo", cadena, cantidad)["fallos"]
-                )
-
-            grafico_fallos_marcos(marcos, fifo, lru, optimo)
-
-            # GRÁFICO 3: Anomalía de Belady
-            algoritmo_fifo = FIFO()
-            grafico_belady_dinamico(algoritmo_fifo)
-
+        except ImportError:
+            messagebox.showinfo("Gráficos", "El módulo de gráficos aún no está integrado.")
+            return
         except (ValueError, tk.TclError) as e:
             messagebox.showerror("Error", str(e))
+            return
+        g.mostrar(cadena, num_marcos)
 
+    def csv_tabla(self):
+        try:
+            max_marcos = max(4, self.var_marcos.get())
+            filas = ctl.generar_tabla_simulaciones(
+                max_marcos=max_marcos,
+                cantidad=self.var_cant.get(),
+                max_pagina=self.var_max.get(),
+            )
+        except (ValueError, tk.TclError) as e:
+            messagebox.showerror("Error", str(e))
+            return
 
+        if not filas:
+            messagebox.showwarning("CSV", "No se generaron resultados.")
+            return
 
+        cols = list(filas[0].keys())
+        ruta = os.path.join("resultados", "simulaciones.csv")
+        os.makedirs("resultados", exist_ok=True)
+        try:
+            with open(ruta, "w", newline="", encoding="utf-8-sig") as f:
+                w = csv.DictWriter(f, fieldnames=cols)
+                w.writeheader()
+                w.writerows(filas)
+        except OSError as e:
+            messagebox.showerror("Error al guardar CSV", f"No se pudo escribir {ruta}:\n{e}")
+            return
+
+        self._cargar_csv_en_tree(filas)
+        messagebox.showinfo("CSV guardado", f"{len(filas)} filas → {ruta}")
 
     def traducir(self):
         if not self.resultado:
             messagebox.showinfo("Traducción", "Primero ejecuta una simulación.")
             return
         try:
-            pag, fis = ctl.traducir(self.resultado, self.var_dir.get(), self.var_tam.get())
+            dir_log = self.var_dir.get()
+            tam = self.var_tam.get()
+            pag, fis = ctl.traducir(self.resultado, dir_log, tam)
         except (ValueError, tk.TclError) as e:
             messagebox.showerror("Error", str(e))
             return
-        self.lbl_dir.config(text=f"Página {pag} -> " + (
-            "FALLO DE PÁGINA" if fis is None else f"dirección física {fis}"))
+        desp = dir_log % tam
+        if fis is None:
+            self.lbl_dir.config(text=f"Pág. {pag}, desp. {desp} -> FALLO DE PÁGINA (en disco)")
+        else:
+            marco = fis // tam
+            self.lbl_dir.config(text=f"Pág. {pag}, desp. {desp}, marco {marco} -> física {fis}")
 
 
 if __name__ == "__main__":
