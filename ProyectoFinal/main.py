@@ -122,13 +122,56 @@ class App(tk.Tk):
                         for n, f, r, t in filas)
         messagebox.showinfo("Comparación", txt)
 
+    
+    
+    
     def graficos(self):
         try:
-            from graficos import graficos as g 
-        except ImportError:
-            messagebox.showinfo("Gráficos", "El módulo de gráficos aún no está integrado.")
-            return
-        g.mostrar(self._leer_cadena())
+            from graficos.graficos import (
+                comparar_algoritmos,
+                grafico_fallos_marcos,
+                grafico_belady_dinamico
+            )
+
+            from algoritmos.fifo import FIFO
+
+            # Obtener datos del simulador
+            cadena = self._leer_cadena()
+            num_marcos = self.var_marcos.get()
+
+            # GRÁFICO 1: Comparación de algoritmos
+            resultados = ctl.comparar(cadena, num_marcos)
+            comparar_algoritmos(resultados)
+
+            # GRÁFICO 2: Fallos según número de marcos
+            marcos = list(range(1, num_marcos + 1))
+
+            fifo = []
+            lru = []
+            optimo = []
+
+            for cantidad in marcos:
+                fifo.append(
+                    ctl.ejecutar("FIFO", cadena, cantidad)["fallos"]
+                )
+                lru.append(
+                    ctl.ejecutar("LRU", cadena, cantidad)["fallos"]
+                )
+                optimo.append(
+                    ctl.ejecutar("Óptimo", cadena, cantidad)["fallos"]
+                )
+
+            grafico_fallos_marcos(marcos, fifo, lru, optimo)
+
+            # GRÁFICO 3: Anomalía de Belady
+            algoritmo_fifo = FIFO()
+            grafico_belady_dinamico(algoritmo_fifo)
+
+        except (ValueError, tk.TclError) as e:
+            messagebox.showerror("Error", str(e))
+
+
+
 
     def traducir(self):
         if not self.resultado:

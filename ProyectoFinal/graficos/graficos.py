@@ -119,21 +119,21 @@ def grafico_fallos_dinamico(cadena, algoritmos, marcos):
 
 # CONEXIÓN CON LOS RESULTADOS DEL SIMULADOR
 
+
 def comparar_algoritmos(resultados):
     """
-    Recibe una lista de resultados de FIFO, LRU y Óptimo.
-    Cada resultado debe respetar el formato del proyecto.
+    Recibe los resultados de controlador.comparar().
+    Cada resultado contiene:
+    (nombre, fallos, reemplazos, tasa_fallos)
     """
 
     tasas = {}
 
-    for resultado in resultados:
-        nombre = resultado["algoritmo"]
-        tasa = resultado["tasa_fallos"]
-
+    for nombre, fallos, reemplazos, tasa in resultados:
         tasas[nombre] = tasa
 
     grafico_tasa_fallos(tasas)
+
 
 
 # ANOMALÍA DE BELADY CON FIFO REAL
