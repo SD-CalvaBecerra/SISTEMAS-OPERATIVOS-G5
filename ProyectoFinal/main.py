@@ -3,7 +3,7 @@ from tkinter import ttk, messagebox
 
 import controlador as ctl
 
-try:  # Panel de la Persona 5
+try:  
     from visualizacion.panel_marcos import PanelMarcos
 except ImportError:
     try:
@@ -11,10 +11,7 @@ except ImportError:
     except ImportError:
         PanelMarcos = None
 
-
 class PanelBasico:
-    """Panel de reserva (tabla de texto) mientras no esté el de la Persona 5."""
-
     def __init__(self, contenedor):
         self.texto = tk.Text(contenedor, height=14, font=("Courier", 10))
         self.texto.pack(fill="both", expand=True)
@@ -30,7 +27,6 @@ class PanelBasico:
             lineas.append(f"{p['pagina']:>3}  {marcos}  {estado}")
         self.texto.delete("1.0", "end")
         self.texto.insert("1.0", "\n".join(lineas))
-
 
 class App(tk.Tk):
     def __init__(self):
@@ -128,7 +124,7 @@ class App(tk.Tk):
 
     def graficos(self):
         try:
-            from graficos import graficos as g  # módulo de la Persona 6
+            from graficos import graficos as g 
         except ImportError:
             messagebox.showinfo("Gráficos", "El módulo de gráficos aún no está integrado.")
             return
@@ -144,10 +140,8 @@ class App(tk.Tk):
             messagebox.showerror("Error", str(e))
             return
         self.lbl_dir.config(text=f"Página {pag} -> " + (
-            "FALLO DE PÁGINA (no está en memoria)" if fis is None else f"dirección física {fis}"))
+            "FALLO DE PÁGINA" if fis is None else f"dirección física {fis}"))
 
 
 if __name__ == "__main__":
     App().mainloop()
-
-

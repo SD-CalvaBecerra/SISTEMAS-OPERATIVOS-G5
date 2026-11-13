@@ -1,13 +1,7 @@
-
 class LRU:
     def __init__(self):
         self.nombre = "LRU"
-
-class LRU:
-    def __init__(self):
-        self.nombre = "LRU"
-
-    
+ 
     def simular(self, cadena, num_marcos):
         if not isinstance(num_marcos, int) or isinstance(num_marcos, bool) or num_marcos <= 0:
             raise ValueError("El número de marcos debe ser un entero mayor que 0")
@@ -62,3 +56,5 @@ class LRU:
             "pasos": pasos
         }
 
+def simular(cadena, num_marcos):
+    return LRU().simular(cadena, num_marcos)

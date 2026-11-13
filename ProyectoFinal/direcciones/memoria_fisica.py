@@ -1,4 +1,3 @@
-
 class MemoriaFisica:
 
     def __init__(self, num_marcos):

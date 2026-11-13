@@ -1,4 +1,3 @@
-
 class TablaPaginas:
 
     def __init__(self):

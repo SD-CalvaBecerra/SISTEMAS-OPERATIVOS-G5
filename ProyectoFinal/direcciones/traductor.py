@@ -1,4 +1,3 @@
-
 class TraductorDirecciones:
 
     def __init__(self, tabla_paginas, tamano_pagina):
